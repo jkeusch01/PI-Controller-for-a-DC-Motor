@@ -1,0 +1,40 @@
+Ra = 0.008;
+La = 26e-6;
+Kt = 590e-6;
+Ke = 590e-6;
+Gear = 7.5;
+FT = 0.01;
+J = 0.0026;
+B = 100e-6;
+SensorGain = 1;
+DesiredOS = 8;
+DesiredST = 4;
+func = tf(Kt*Gear,[(La*J) ((B*La)+(Ra*J)) (B*Ra)+(Gear*Kt*Ke)]) ; %tf(4425,[67.6 20800 3.4107]);
+Poo = pole(func);
+P = -3.075667239107318e+02;
+P2 = -0.164045320037446;
+zeta = -log(DesiredOS/100)/(sqrt(log(DesiredOS/100)^2+pi^2));
+w_n = 4/(zeta*DesiredST);
+rho_d = zeta*w_n;
+w_d = w_n*sqrt(1-zeta^2);
+tau = (J/B)*5;
+% bode(func);
+theta1 = atan2d(w_d,-P-rho_d);
+theta2 = 180 - atan2d(w_d,rho_d+P2);
+theta3 = 180 - atan2d(w_d,rho_d);
+TAC = -(theta1+theta2+theta3);
+AngleDef = TAC + 180;
+z = (w_d + rho_d*tand(-AngleDef))/tand(-AngleDef);
+thetaz = 180 - atan2d(w_d,z-rho_d);
+% plot(z,0,'o');
+sys =  func * tf(1,[1,0]) * SensorGain * tf([1 z],1);
+k = linspace(0,50,100000);
+% sys = tf(4425,[1 0]) * tf(1,[1 -P]) * tf(1, [1 -P2]) * SensorGain * tf([1 z],1);
+% pzmap(func);
+rlocus(sys,k);
+hold on
+plot(-rho_d,w_d,'x')
+plot(-rho_d,-w_d,'x')
+Kp = 0.00861;
+Ki = z*Kp;
+PI = tf([Kp Ki],[1 0]);
